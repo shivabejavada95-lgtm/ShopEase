@@ -2,9 +2,12 @@ package com.example.shopease
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,31 +16,49 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.shopease.ui.theme.ShopEaseTheme
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
+
+private object Routes {
+    const val SPLASH = "splash"
+    const val HOME = "home"
+}
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(
+                android.graphics.Color.TRANSPARENT,
+            ),
+            navigationBarStyle = SystemBarStyle.dark(
+                android.graphics.Color.TRANSPARENT,
+            ),
+        )
 
         setContent {
             ShopEaseTheme {
@@ -49,19 +70,34 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ShopEaseApp() {
-    var showSplash by rememberSaveable { mutableStateOf(true) }
+    val navController = rememberNavController()
 
-    LaunchedEffect(showSplash) {
-        if (showSplash) {
-            delay(2000)
-            showSplash = false
+    NavHost(
+        navController = navController,
+        startDestination = Routes.SPLASH,
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        composable(route = Routes.SPLASH) {
+
+            LaunchedEffect(Unit) {
+                delay(2500.milliseconds)
+
+                navController.navigate(Routes.HOME) {
+                    // Remove splash from the back stack.
+                    popUpTo(Routes.SPLASH) {
+                        inclusive = true
+                    }
+
+                    launchSingleTop = true
+                }
+            }
+
+            ShopEaseSplashScreen()
         }
-    }
 
-    if (showSplash) {
-        ShopEaseSplashScreen()
-    } else {
-        HomePlaceholder()
+        composable(route = Routes.HOME) {
+            HomePlaceholder()
+        }
     }
 }
 
@@ -71,63 +107,156 @@ fun ShopEaseSplashScreen() {
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
+                brush = Brush.linearGradient(
                     colors = listOf(
-                        Color(0xFFE8F5E9),
-                        Color(0xFFFFFFFF)
-                    )
-                )
-            )
-            .safeDrawingPadding()
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
+                        Color(0xFF172554),
+                        Color(0xFF4338CA),
+                        Color(0xFF9333EA),
+                        Color(0xFFDB2777),
+                    ),
+                ),
+            ),
     ) {
+        // Soft decorative circles behind the content.
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawCircle(
+                color = Color.White.copy(alpha = 0.07f),
+                radius = size.width * 0.65f,
+                center = Offset(
+                    x = size.width * 0.95f,
+                    y = size.height * 0.12f,
+                ),
+            )
+
+            drawCircle(
+                color = Color.White.copy(alpha = 0.06f),
+                radius = size.width * 0.55f,
+                center = Offset(
+                    x = size.width * 0.05f,
+                    y = size.height * 0.85f,
+                ),
+            )
+        }
+
         Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
+            Box(
+                modifier = Modifier
+                    .size(112.dp)
+                    .background(
+                        color = Color.White.copy(alpha = 0.14f),
+                        shape = RoundedCornerShape(30.dp),
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = Color.White.copy(alpha = 0.30f),
+                        shape = RoundedCornerShape(30.dp),
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                ShoppingBagLogo()
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
             Text(
                 text = "ShopEase",
-                fontSize = 42.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1B5E20)
+                fontSize = 44.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-1).sp,
+                color = Color.White,
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Everyday shopping, made easy",
+                text = "Discover more. Shop with ease.",
                 fontSize = 16.sp,
-                color = Color(0xFF526454),
-                textAlign = TextAlign.Center
+                color = Color.White.copy(alpha = 0.90f),
+                textAlign = TextAlign.Center,
             )
 
-            Spacer(modifier = Modifier.height(36.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
             CircularProgressIndicator(
-                color = Color(0xFF2E7D32),
-                strokeWidth = 3.dp
+                modifier = Modifier.size(28.dp),
+                color = Color.White,
+                strokeWidth = 2.dp,
             )
         }
     }
 }
 
 @Composable
+private fun ShoppingBagLogo() {
+    // Drawn directly, so no image or icon dependency is needed.
+    Canvas(modifier = Modifier.size(64.dp)) {
+        val lineWidth = 3.dp.toPx()
+
+        drawRoundRect(
+            color = Color.White,
+            topLeft = Offset(
+                x = size.width * 0.18f,
+                y = size.height * 0.32f,
+            ),
+            size = Size(
+                width = size.width * 0.64f,
+                height = size.height * 0.56f,
+            ),
+            cornerRadius = CornerRadius(
+                x = 7.dp.toPx(),
+                y = 7.dp.toPx(),
+            ),
+            style = Stroke(width = lineWidth),
+        )
+
+        drawArc(
+            color = Color.White,
+            startAngle = 180f,
+            sweepAngle = 180f,
+            useCenter = false,
+            topLeft = Offset(
+                x = size.width * 0.34f,
+                y = size.height * 0.10f,
+            ),
+            size = Size(
+                width = size.width * 0.32f,
+                height = size.height * 0.44f,
+            ),
+            style = Stroke(width = lineWidth),
+        )
+    }
+}
+
+@Composable
 fun HomePlaceholder() {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7FAF7))
-            .safeDrawingPadding()
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
+            .background(Color(0xFFF8F7FC)),
     ) {
-        Text(
-            text = "Welcome to ShopEase",
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF1B5E20),
-            textAlign = TextAlign.Center
-        )
+        Box(
+            modifier = Modifier
+                .background(Color(0xFF172554))
+                .safeDrawingPadding()
+                .padding(horizontal = 24.dp, vertical = 20.dp)
+                .fillMaxSize()
+                .weight(1f),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "Welcome to ShopEase",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
